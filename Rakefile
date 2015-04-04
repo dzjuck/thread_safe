@@ -1,3 +1,5 @@
+#!/usr/bin/env rake
+
 require "bundler/gem_tasks"
 require "rake/testtask"
 
@@ -10,11 +12,10 @@ def safe_load(file)
     puts ex.message
   end
 end
+
 Dir.glob('tasks/**/*.rake').each do |rakefile|
   safe_load rakefile
 end
-
-task :default => :test
 
 if defined?(JRUBY_VERSION)
   require "ant"
@@ -55,7 +56,13 @@ else
   task :package
 end
 
-Rake::TestTask.new :test => :package do |t|
-  t.libs << "lib"
-  t.test_files = FileList["test/**/*.rb"]
+begin
+  require 'rspec'
+  require 'rspec/core/rake_task'
+  RSpec::Core::RakeTask.new(:spec) do |t|
+    t.rspec_opts = '--color --backtrace --format documentation'
+  end
+  task :default => [:clean, :compile, :spec]
+rescue LoadError
+  puts 'Error loading Rspec rake tasks, probably building the gem...'
 end
